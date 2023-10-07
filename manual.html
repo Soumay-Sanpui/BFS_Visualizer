@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualization Technical Information</title>
+</head>
+
+<body>
+    <h1>Algorithm Visualization Technical Information</h1>
+
+    <h2>Functions and Explanations</h2>
+
+    <h3>`chooseBlock(maxval)`</h3>
+    <pre>
+        <code>
+            function chooseBlock(maxval) {
+                return Math.floor(Math.random() * maxval);
+            }
+        </code>
+    </pre>
+    <p>
+        This function generates a random block index within the range of `0` to `maxval - 1`. It's used to randomly
+        select positions for the source and destination blocks on the grid.
+    </p>
+
+    <h3>`grid(parent)`</h3>
+    <pre>
+        <code>
+            function grid(parent) {
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const boxSize = 20;
+                const numRows = Math.floor(viewportHeight / boxSize);
+                const numCols = Math.floor(viewportWidth / boxSize);
+                parent.style.display = "grid";
+                parent.style.gridTemplateRows = `repeat(${numRows}, ${boxSize}px)`;
+                parent.style.gridTemplateColumns = `repeat(${numCols}, ${boxSize}px)`;
+            
+                srcBlock = chooseBlock(numRows * numCols);
+                destBlock = chooseBlock(numRows * numCols);
+            
+                if (srcBlock === destBlock) {
+                    destBlock += numCols;
+                    destBlock %= numRows * numCols;
+                }
+            
+                for (let row = 0; row < numRows * numCols; row++) {
+                    const box = document.createElement("div");
+                    box.id = `box${row}`;
+                    box.value = row;
+                    if (row === srcBlock) {
+                        const img = document.createElement("img");
+                        img.src = "src.png";
+                        img.alt = "Source";
+                        img.style.width = "100%";
+                        img.style.height = "100%";
+                        box.appendChild(img);
+                    } else if (row === destBlock) {
+                        const img = document.createElement("img");
+                        img.src = "dest.png";
+                        img.alt = "Destination";
+                        img.style.width = "100%";
+                        img.style.height = "100%";
+                        box.appendChild(img);
+                    } else {
+                        box.classList.add("box");
+                    }
+                    parent.appendChild(box);
+                }
+            
+                return { numRows, numCols, srcBlock, destBlock };
+            }
+            
+        </code>
+    </pre>
+    <p>
+        This function creates a grid of boxes within the specified `parent` element. It calculates the number of rows
+        and columns based on the viewport size, sets the source and destination blocks randomly, and returns essential
+        grid information.
+    </p>
+
+    <h3>`selector(box)`</h3>
+    <pre>
+        <code>
+            function selector(box) {
+                const boxValue = parseInt(box.value);
+                if (!wallSet.has(boxValue)) {
+                    box.style.background = "#4fc2f7";
+                    selectedBoxSet.add(box.id);
+                    setTimeout(() => {
+                        if (!destinationReached) {
+                            box.style.background = "#42f598";
+                        }
+                    }, 500);
+                    setTimeout(() => {
+                        if (!destinationReached) {
+                            box.style.background = "#d96bf2";
+                        }
+                    }, 1000);
+                }
+            }
+        </code>
+    </pre>
+    <p>
+        This function handles the selection of grid boxes and updates their colors based on user interactions.
+    </p>
+
+    <h3>`wallAdder()`</h3>
+    <pre>
+        <code>
+            function wallAdder() {
+                const boxes = document.querySelectorAll(".box");
+                boxes.forEach((box) => {
+                    const boxValue = parseInt(box.value);
+                    box.addEventListener("contextmenu", (event) => {
+                        event.preventDefault();
+                        box.style.background = "gold";
+                        wallSet.add(boxValue);
+                    });
+                });
+            }
+        </code>
+    </pre>
+    <p>
+        This function allows users to add walls to the grid by right-clicking on the desired grid boxes. It changes the
+        background color of the selected boxes to indicate walls.
+    </p>
+
+    <h3>`bfsTraversal(grid)`</h3>
+    <pre>
+        <code>
+            function bfsTraversal(grid) {
+                const { numRows, numCols, srcBlock, destBlock } = grid;
+                const queue = [srcBlock];
+                const visited = new Set();
+                visited.add(srcBlock);
+            
+                // Add a parent object to keep track of parents
+                const parent = {};
+                parent[srcBlock] = null;
+            
+                const directions = [-1, 1, -numCols, numCols];
+            
+                function processNode(node) {
+                    const box = document.getElementById(`box${node}`);
+                    selector(box);
+            
+                    if (node === destBlock) {
+                        return true;
+                    }
+            
+                    for (const dir of directions) {
+                        const neighbor = node + dir;
+            
+                        if (
+                            neighbor >= 0 &&
+                            neighbor < numRows * numCols &&
+                            !visited.has(neighbor) &&
+                            !wallSet.has(neighbor)
+                        ) {
+                            queue.push(neighbor);
+                            visited.add(neighbor);
+                            parent[neighbor] = node;
+                        }
+                    }
+            
+                    return false;
+                }
+            
+                const shortestPath = []; // Store the shortest path nodes
+            
+                function traverseNext() {
+                    if (queue.length === 0) {
+                        console.log("No path found.");
+                        return;
+                    }
+            
+                    const node = queue.shift();
+                    const found = processNode(node);
+            
+                    if (!found) {
+                        shortestPath.push(node);
+                        setTimeout(traverseNext, 50);
+                    } else {
+                        // Reconstruct the shortest path
+                        const path = [];
+                        let currentNode = destBlock;
+            
+                        while (currentNode !== null) {
+                            path.push(currentNode);
+                            currentNode = parent[currentNode];
+                        }
+            
+                        path.reverse();
+                        colorShortestPath(path);
+                    }
+                }
+            
+                traverseNext();
+            }
+        </code>
+    </pre>
+    <p>
+        This function performs a Breadth-First Search (BFS) traversal on the grid to find the shortest path from the
+        source to the destination. It uses a queue data structure and updates the grid to visualize the traversal
+        process.
+    </p>
+
+    <h3>`colorShortestPath(path)`</h3>
+    <pre>
+        <code>
+            function colorShortestPath(path) {
+                let delay = 100;
+            
+                function changeColor() {
+                    if (path.length === 0) {
+                        return;
+                    }
+            
+                    const boxId = `box${path.pop()}`;
+                    const box = document.getElementById(boxId);
+            
+                    if (box.style.background !== "gold") {
+                        box.style.background = "gold";
+                    }
+            
+                    setTimeout(changeColor, delay);
+                }
+            
+                changeColor();
+            }
+        </code>
+    </pre>
+    <p>
+        This function colors the shortest path found by the BFS algorithm in the grid. It uses a delay to highlight each
+        block along the path.
+    </p>
+
+    <h2>Variables</h2>
+    <ul>
+        <h3>
+            <li><code>root</code>: Holds the reference to the root element.</li>
+        </h3>
+        <h3>
+            <li><code>wallSet</code>: A set to store wall blocks.</li>
+        </h3>
+        <h3>
+            <li><code>selectedBoxSet</code>: A set to store selected grid boxes.</li>
+        </h3>
+        <h3>
+            <li><code>srcBlock</code>: Holds the source block index.</li>
+        </h3>
+        <h3>
+            <li><code>destBlock</code>: Holds the destination block index.</li>
+        </h3>
+        <h3>
+            <li><code>destinationReached</code>: Indicates if the destination has been reached.</li>
+        </h3>
+        <h3>
+            <li><code>boxSize</code>: Variable inside the grid genrator function change it's value to increase of
+                decrease the size of each square in the grid.</li>
+        </h3>
+    </ul>
+
+    <h2>Console Variables</h2>
+    <ul>
+        <li><code>wallSet</code>: A set containing the indices of grid blocks that are marked as walls. You can inspect
+            this set in the console to check which blocks are walls.</li>
+        <li><code>destinationReached</code>: A boolean variable that indicates whether the destination has been reached.
+            You can log this variable to the console to check if the algorithm successfully found a path.</li>
+        <li><code>srcBlock</code>: A integer variable to get the currently generated source node/ starting point</li>
+        <li><code>destBlock</code>: A integer variable to get the currently generated Destination node/ end point</li>
+        <li><code>selectedBoxSet</code>: A set containing all the values are being selected by the algorithm while
+            finding the path between the source and destination node.</li>
+    </ul>
+
+
+    <h2>Usage Instructions</h2>
+    <ol>
+        <li>After clicking the "Start Visualizer" button, the algorithm will begin.</li>
+        <li>Use a right mouse click to mark any cell as a wall.</li>
+        <li>Refreshing the page will generate new source and destination points.</li>
+    </ol>
+
+    <h2>Important Notes</h2>
+    <p>
+        - The algorithm starts when the page is loaded and may take some time to complete.
+        - Walls can be added to the grid by right-clicking on the desired grid boxes.
+        - After the visualizer start hitting the refresh button will reload only the visualizer not the splash screen.
+        - Once Refreshed a new source and destination node will be choose and algorithm will be called again.
+        - The algorithm will find the shortest path from the source to the destination.
+        - The shortest path will be highlighted after the algorithm completes.
+        - To return back to the splash page click on go back button on browser.
+    </p>
+    <a style="font-size: 22px; border: 2px solid black" href="./index.html">Start visualizer</a>
+</body>
+
+</html>

@@ -1,0 +1,38 @@
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+
+body {
+    position: relative;
+}
+
+.box {
+    border: 1px solid rgba(184, 184, 184, 0.24);
+    transition: all;
+    transition-duration: 100ms;
+    transition-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+#fps {
+    position: absolute;
+    top: 2vw;
+    left: 2vw;
+    border: none;
+    color: white;
+    background-color: red;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 1vw;
+    padding: 5px;
+    width: 8vw;
+    border-radius: 4px;
+    cursor: pointer;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(.46, .03, .52, .96);
+    transition-duration: 100ms;
+}
+
+#fps:hover {
+    scale: 1.1;
+}
